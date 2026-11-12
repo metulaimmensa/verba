@@ -1,0 +1,16 @@
+{
+  "name": "verba",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Испанские слова: словарь, карточки, спряжение",
+  "scripts": {
+    "test": "node test/conjugate.test.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
