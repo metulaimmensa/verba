@@ -175,16 +175,23 @@ function applyResult(w, outcome) {
 // ==========================================================
 // Тактильная отдача
 // ==========================================================
+// Без сборщика плагины Capacitor не регистрируются в Capacitor.Plugins,
+// поэтому зовём нативный мост напрямую.
+const Cap = window.Capacitor;
+const isNative = !!(Cap && typeof Cap.nativePromise === 'function' && window.androidBridge);
+function nativeCall(plugin, method, opts = {}) {
+  if (!isNative) return null;
+  try { return Cap.nativePromise(plugin, method, opts).catch(() => null); } catch (e) { return null; }
+}
 function haptic(kind) {
   if (!db.settings.haptics) return;
-  const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
   try {
-    if (H) {
-      if (kind === 'light') H.impact({ style: 'LIGHT' });
-      else if (kind === 'soft') H.impact({ style: 'MEDIUM' });
-      else if (kind === 'strong') H.impact({ style: 'HEAVY' });
-      else if (kind === 'success') H.notification({ type: 'SUCCESS' });
-      else if (kind === 'error') H.notification({ type: 'ERROR' });
+    if (isNative) {
+      if (kind === 'light') nativeCall('Haptics', 'impact', { style: 'LIGHT' });
+      else if (kind === 'soft') nativeCall('Haptics', 'impact', { style: 'MEDIUM' });
+      else if (kind === 'strong') nativeCall('Haptics', 'impact', { style: 'HEAVY' });
+      else if (kind === 'success') nativeCall('Haptics', 'notification', { type: 'SUCCESS' });
+      else if (kind === 'error') nativeCall('Haptics', 'notification', { type: 'ERROR' });
     } else if (navigator.vibrate) {
       navigator.vibrate({ light: 8, soft: 14, strong: 24, success: [12, 40, 12], error: [30, 50, 30] }[kind] || 8);
     }
@@ -619,26 +626,90 @@ function openSheet(inner, bind) {
   // Если лист уже открыт — меняем содержимое на месте, запись в истории остаётся одна
   if (sheetEl) {
     const sh = $('.sheet', sheetEl);
-    sh.innerHTML = `<div class="grip"></div>${inner}`;
+    sh.innerHTML = GRIP + inner;
     sh.scrollTop = 0;
     bind && bind(sh);
     return sheetEl;
   }
   const wrap = document.createElement('div');
   wrap.className = 'sheet-wrap';
-  wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grip"></div>${inner}</div>`;
+  wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${GRIP}${inner}</div>`;
   $('#layer').appendChild(wrap);
   sheetEl = wrap;
   wrap.addEventListener('click', e => { if (e.target === wrap) closeSheet(); });
+  bindSheetDrag(wrap);
   pushLayer(() => animateClose(wrap));
   bind && bind($('.sheet', wrap));
   return wrap;
 }
+const GRIP = '<div class="grip-zone" data-close aria-label="Закрыть: потяни вниз или нажми"><div class="grip"></div></div>';
+// Лист уезжает вниз — зеркально тому, как выезжает при открытии
 function animateClose(wrap) {
   if (sheetEl === wrap) sheetEl = null;
   if (reduceMotion()) return wrap.remove();
-  wrap.classList.add('closing');
-  setTimeout(() => wrap.remove(), 200);
+  const sh = $('.sheet', wrap);
+  const from = sh.style.transform || 'translateY(0px)';
+  sh.style.animation = 'none';
+  sh.style.transform = from;
+  void sh.offsetHeight;
+  sh.style.transition = 'transform 260ms cubic-bezier(.4, 0, .9, .5)';
+  sh.style.transform = 'translateY(105%)';
+  wrap.style.transition = 'background 260ms';
+  wrap.style.background = 'rgba(5, 8, 18, 0)';
+  setTimeout(() => wrap.remove(), 270);
+}
+// Свайп вниз: за «пипку» — всегда, за содержимое — когда лист прокручен до верха
+function bindSheetDrag(wrap) {
+  const sh = $('.sheet', wrap);
+  let y0 = null, x0 = 0, dy = 0, dragging = false, fromGrip = false, t0 = 0, crossed = false;
+  const limit = () => Math.min(140, sh.offsetHeight * 0.25);
+  const start = (x, y, target) => {
+    if (target.closest('input, textarea, select')) return;
+    fromGrip = !!target.closest('.grip-zone');
+    if (!fromGrip && sh.scrollTop > 0) return;
+    y0 = y; x0 = x; dy = 0; dragging = false; crossed = false; t0 = performance.now();
+  };
+  const move = (x, y, e) => {
+    if (y0 === null) return;
+    const my = y - y0, mx = x - x0;
+    if (!dragging) {
+      if (Math.abs(my) < 6 && Math.abs(mx) < 6) return;
+      if (my <= 0 || Math.abs(mx) > Math.abs(my) || (!fromGrip && sh.scrollTop > 0)) { y0 = null; return; }
+      dragging = true; sh.style.animation = 'none'; sh.style.transition = 'none'; sh.style.userSelect = 'none';
+    }
+    dy = Math.max(0, my);
+    sh.style.transform = `translateY(${dy}px)`;
+    wrap.style.background = `rgba(5, 8, 18, ${(0.6 * (1 - Math.min(1, dy / sh.offsetHeight))).toFixed(3)})`;
+    if (dy > limit() && !crossed) { crossed = true; haptic('light'); }
+    if (dy <= limit()) crossed = false;
+    if (e.cancelable) e.preventDefault();
+  };
+  const end = () => {
+    if (y0 === null) return;
+    const was = dragging; y0 = null; dragging = false;
+    if (!was) return;
+    wrap._dragged = true; setTimeout(() => (wrap._dragged = false), 60);
+    const v = dy / Math.max(1, performance.now() - t0);
+    if (dy > limit() || (v > 0.6 && dy > 40)) return closeSheet();
+    sh.style.transition = 'transform 300ms var(--spring)';
+    sh.style.transform = '';
+    wrap.style.background = '';
+  };
+  sh.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+  sh.addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
+  sh.addEventListener('touchend', end);
+  sh.addEventListener('touchcancel', end);
+  sh.addEventListener('mousedown', e => {
+    start(e.clientX, e.clientY, e.target);
+    const mm = ev => move(ev.clientX, ev.clientY, ev);
+    const mu = () => { end(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); };
+    window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu);
+  });
+  // После перетаскивания клик по кнопке под пальцем не срабатывает
+  sh.addEventListener('click', e => {
+    if (wrap._dragged) { e.stopPropagation(); e.preventDefault(); return; }
+    if (e.target.closest('[data-close]')) closeSheet();
+  }, true);
 }
 function closeSheet() { if (sheetEl) popLayer(); }
 
@@ -1297,6 +1368,16 @@ $$('.nav-btn[data-tab]').forEach(b => b.addEventListener('click', () => {
   goTab(b.dataset.tab);
 }));
 $('#nav-study').addEventListener('click', startStudy);
+// Системная кнопка «Назад»: закрывает верхний слой, потом ведёт на главную, потом выходит
+if (isNative) {
+  try {
+    Cap.addListener('App', 'backButton', () => {
+      if (layers.length) popLayer();
+      else if (ui.tab !== 'home') goTab('home');
+      else nativeCall('App', 'exitApp');
+    });
+  } catch (e) { /* без плагина App */ }
+}
 window.addEventListener('scroll', () => { const t = $('#top'); if (t) t.classList.toggle('scrolled', window.scrollY > 4); }, { passive: true });
 if (reduceMotion()) document.documentElement.classList.add('reduce-motion');
 

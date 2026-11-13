@@ -263,10 +263,11 @@ body.studying .nav { transform: translateY(110%); }
 /* ---------- Нижние листы ---------- */
 .sheet-wrap { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 8, 18, .6); animation: fadeIn var(--t-fast) var(--ease); }
 .sheet-wrap.closing { animation: fadeOut var(--t-fast) var(--ease) forwards; }
-.sheet { width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; padding: 8px var(--gutter) calc(20px + var(--safe-b)); animation: sheetUp var(--t-mid) var(--ease); }
-.sheet-wrap.closing .sheet { animation: sheetDown var(--t-fast) var(--ease) forwards; }
-.sheet .grip { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 4px auto 14px; }
-@keyframes sheetUp { from { transform: translateY(40%); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet { width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; padding: 8px var(--gutter) calc(20px + var(--safe-b)); animation: sheetUp 300ms cubic-bezier(.2, .8, .2, 1); }
+.sheet { padding-top: 0; }
+.sheet .grip-zone { position: sticky; top: 0; z-index: 2; margin: 0 calc(-1 * var(--gutter)) 6px; padding: 12px 0 14px; background: var(--bg); cursor: grab; touch-action: none; }
+.sheet .grip { width: 44px; height: 5px; border-radius: 4px; background: var(--muted); opacity: .55; margin: 0 auto; }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes sheetDown { to { transform: translateY(30%); opacity: 0; } }
 @keyframes fadeIn { from { opacity: 0; } }
 @keyframes fadeOut { to { opacity: 0; } }
