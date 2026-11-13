@@ -24,6 +24,8 @@ jobs:
         run: npm install
       - name: Test conjugation
         run: npm test
+      - name: Stamp build
+        run: echo "{\"sha\":\"${GITHUB_SHA::7}\",\"date\":\"$(date -u +%Y-%m-%dT%H:%MZ)\"}" > www/build.json
       - name: Add Android platform
         run: |
           npx cap add android
@@ -43,6 +45,6 @@ jobs:
         with:
           tag_name: latest
           name: Verba (последняя сборка)
-          body: Свежая сборка из main. Скачай verba.apk и установи поверх старой.
+          body: "Свежая сборка из main. Скачай verba.apk и установи поверх старой.\n\nbuild: ${{ github.sha }}"
           files: verba.apk
           make_latest: true

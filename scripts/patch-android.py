@@ -18,3 +18,13 @@ extra = ('        <item name="android:windowBackground">@color/verbaBg</item>\n'
 s = re.sub(r'(<style name="AppTheme.NoActionBar"[^>]*>\n)', r'\1' + extra, s)
 styles.write_text(s)
 print(s)
+
+# Иконка приложения
+import shutil
+icons = pathlib.Path('assets/icon/android')
+resroot = pathlib.Path('android/app/src/main/res')
+for d in icons.iterdir():
+    for f in d.iterdir():
+        (resroot / d.name).mkdir(exist_ok=True)
+        shutil.copy(f, resroot / d.name / f.name)
+print('icons copied')

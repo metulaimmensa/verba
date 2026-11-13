@@ -342,6 +342,7 @@ function renderHome() {
       <button data-quick="add" style="--c:var(--berry)"><span class="qi">${icon('plus', 'sm')}</span><b>Добавить слово</b><small>спряжение строится само</small></button>
       <button data-quick="verbs" style="--c:var(--purple)"><span class="qi">${icon('conj', 'sm')}</span><b>Глаголы</b><small>${verbs} со спряжением</small></button>
     </div>
+    ${update.available ? `<div class="notice upd"><span class="ni">${icon('download', 'sm')}</span><p><b>Вышла новая версия</b></p><a href="${APK_URL}" class="lnk">Скачать</a></div>` : ''}
     ${c.fill ? `<div class="notice"><span class="ni">${icon('fill', 'sm')}</span><p><b>${c.fill}</b> ${plural(c.fill, 'слово ждёт', 'слова ждут', 'слов ждут')} примеров</p><button data-quick="fill">К словам</button></div>` : ''}
   `;
 }
@@ -812,14 +813,20 @@ function renderSettings() {
     <div class="set-group" style="padding-bottom:14px">
       <div class="set-row" style="border:0"><div class="tx"><b>GitHub</b><p>${DATA_REPO} · последняя: ${esc(last)}</p></div></div>
       <label class="field"><span>Токен доступа</span><input class="input" id="s-token" type="password" value="${esc(db.settings.token)}" autocomplete="off" placeholder="github_pat_…"></label>
-      <div class="row"><button class="btn" data-act="save-token">${icon('key', 'sm')}Сохранить</button><button class="btn primary" data-act="sync" id="sync-btn">${icon('sync', 'sm')}Синхронизировать</button></div>
+      <div class="row compact"><button class="btn" data-act="save-token">Сохранить</button><button class="btn primary" data-act="sync" id="sync-btn">Синхронизировать</button></div>
     </div>
+    <div class="section">Обновление</div>
+    <div class="set-group">
+      <div class="set-row"><img src="icon.png" alt="" class="app-icon"><div class="tx"><b>verba. 2.0</b><p id="upd-status">${esc(updateText())}</p></div></div>
+      <div class="set-row" style="border:0;padding-top:0"><a class="btn ${update.available ? 'primary' : ''} block" href="${APK_URL}" data-act="download">${icon('download', 'sm')}${update.available ? 'Скачать новую версию' : 'Скачать последнюю сборку'}</a></div>
+    </div>
+    <p class="small muted" style="margin:8px 4px 0">Откроется браузер и скачает verba.apk. Устанавливай поверх — слова и прогресс останутся.</p>
     <div class="section">Данные</div>
     <div class="set-group">
       <div class="set-row"><div class="tx"><b>Экспорт JSON</b><p>Все слова с прогрессом одним файлом</p></div><button class="icon-btn" data-act="export" aria-label="Экспорт">${icon('download', 'sm')}</button></div>
       <div class="set-row"><div class="tx"><b>Импорт JSON</b><p>Слияние с текущими: новее — побеждает</p></div><button class="icon-btn" data-act="import" aria-label="Импорт">${icon('upload', 'sm')}</button><input type="file" id="s-file" accept="application/json,.json" hidden></div>
     </div>
-    <p class="small muted" style="text-align:center;margin:22px 0 0">verba. 2.0 · ${db.words.length} ${plural(db.words.length, 'слово', 'слова', 'слов')}</p>`;
+    <p class="small muted" style="text-align:center;margin:22px 0 0">verba. 2.0${update.build ? ' · ' + esc(update.build.sha) : ''} · ${db.words.length} ${plural(db.words.length, 'слово', 'слова', 'слов')}</p>`;
 }
 function bindSettings() {
   $$('[data-step]').forEach(b => b.addEventListener('click', () => {
@@ -1130,23 +1137,25 @@ function countUp(el, to, delay) {
 // Свайп-стек: только после раскрытия, с порогом и без конфликта с вертикальной прокруткой
 function bindSwipe() {
   const s = ui.session; const card = $('#flash'); if (!card) return;
+  const surface = $('.study');
   const tint = $('#tint'), sr = $('.stamp.r', card), sl = $('.stamp.l', card);
   const canRight = () => s.state === 'result' && s.result.allOk;
   const canLeft = () => s.state === 'result';
   const TH = Math.min(120, window.innerWidth * 0.28);
   let x0 = 0, y0 = 0, dx = 0, active = false, decided = null, crossed = false, id = null;
-  card.addEventListener('pointerdown', e => {
+  // Тянуть можно за любую точку экрана, кроме кнопок и полей
+  surface.addEventListener('pointerdown', e => {
     if (s.state !== 'result' || e.target.closest('button, input, a')) return;
     x0 = e.clientX; y0 = e.clientY; dx = 0; active = true; decided = null; crossed = false; id = e.pointerId;
   });
-  card.addEventListener('pointermove', e => {
+  surface.addEventListener('pointermove', e => {
     if (!active || e.pointerId !== id) return;
     const mx = e.clientX - x0, my = e.clientY - y0;
     if (!decided) {
       if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
       decided = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
       if (decided === 'y') { active = false; return; }
-      card.setPointerCapture(id); card.classList.add('dragging');
+      surface.setPointerCapture(id); card.classList.add('dragging');
     }
     dx = mx;
     if (dx > 0 && !canRight()) dx = dx * 0.25;
@@ -1172,14 +1181,46 @@ function bindSwipe() {
     tint.style.opacity = 0; sr.style.opacity = 0; sl.style.opacity = 0;
     setTimeout(() => { card.style.transition = ''; }, 330);
   };
-  card.addEventListener('pointerup', release);
-  card.addEventListener('pointercancel', release);
+  surface.addEventListener('pointerup', release);
+  surface.addEventListener('pointercancel', release);
 }
 document.addEventListener('keydown', e => {
   if (!ui.studying || !ui.session || ui.session.state !== 'result' || e.key !== 'Enter') return;
   e.preventDefault();
   ui.session.result.allOk ? decide('repeat', 1) : decide('wrong', -1);
 });
+
+// ==========================================================
+// Обновления: сравниваем свою сборку с последним релизом на GitHub
+// ==========================================================
+const APK_URL = 'https://github.com/metulaimmensa/verba/releases/latest/download/verba.apk';
+const update = { build: null, remote: null, available: false, checked: false, error: false };
+function updateText() {
+  if (!update.build) return 'Сборка без отметки версии (браузер или старая установка)';
+  const d = new Date(update.build.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  if (update.available) return `У тебя сборка от ${d}. На GitHub есть новее.`;
+  if (update.error) return `Сборка от ${d}. Проверить обновления не вышло — нет сети?`;
+  return update.checked ? `Сборка от ${d}. Это последняя версия.` : `Сборка от ${d}. Проверяю обновления…`;
+}
+async function checkUpdate() {
+  try {
+    const r = await fetch('build.json', { cache: 'no-store' });
+    if (r.ok) update.build = await r.json();
+  } catch (e) { /* сборка из браузера */ }
+  try {
+    const r = await fetch('https://api.github.com/repos/metulaimmensa/verba/releases/tags/latest', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const rel = await r.json();
+    const m = /build:\s*([0-9a-f]{7,40})/.exec(rel.body || '');
+    update.remote = m ? m[1].slice(0, 7) : null;
+    update.available = !!(update.build && update.remote && update.remote !== update.build.sha);
+  } catch (e) { update.error = true; }
+  update.checked = true;
+  if (!ui.studying && (ui.tab === 'home' || ui.tab === 'settings')) {
+    if (ui.tab === 'settings') { const el = $('#upd-status'); if (el) el.textContent = updateText(); if (update.available) render(); }
+    else if (update.available) render();
+  }
+}
 
 // ==========================================================
 // Синхронизация с приватным репозиторием (формат не менялся)
@@ -1268,4 +1309,5 @@ if (reduceMotion()) document.documentElement.classList.add('reduce-motion');
     } catch (e) { /* без сида */ }
   }
   render();
+  checkUpdate();
 })();
