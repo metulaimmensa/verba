@@ -2,5 +2,9 @@
   "appId": "com.metulaimmensa.verba",
   "appName": "Verba",
   "webDir": "www",
-  "backgroundColor": "#16130f"
+  "backgroundColor": "#0F1425",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto",
+    "backgroundColor": "#0F1425"
+  }
 }
