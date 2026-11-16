@@ -405,3 +405,6 @@ a.btn { text-decoration: none; }
 .notice.upd .ni { color: var(--berry); }
 .notice .lnk { color: var(--berry); font-weight: 800; font-size: 13px; text-decoration: none; padding: 12px 4px; }
 .study { touch-action: pan-y; }
+
+/* После проверки поля заблокированы: пусть касания проходят сквозь них, иначе свайп по ним не ловится */
+.flash .input:disabled { pointer-events: none; }

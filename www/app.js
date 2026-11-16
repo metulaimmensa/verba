@@ -1216,7 +1216,7 @@ function bindSwipe() {
   const tint = $('#tint'), sr = $('.stamp.r', card), sl = $('.stamp.l', card);
   const canRight = () => s.state === 'result' && s.result.allOk;
   const canLeft = () => s.state === 'result';
-  const TH = Math.min(50, window.innerWidth * 0.16);
+  const TH = Math.min(40, window.innerWidth * 0.16);
   let x0 = 0, y0 = 0, dx = 0, active = false, decided = null, crossed = false, id = null;
   // Тянуть можно за любую точку экрана, кроме кнопок и полей
   surface.addEventListener('pointerdown', e => {
