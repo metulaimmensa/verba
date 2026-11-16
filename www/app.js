@@ -662,7 +662,7 @@ function animateClose(wrap) {
 function bindSheetDrag(wrap) {
   const sh = $('.sheet', wrap);
   let y0 = null, x0 = 0, dy = 0, dragging = false, fromGrip = false, t0 = 0, crossed = false;
-  const limit = () => Math.min(105, sh.offsetHeight * 0.1875);
+  const limit = () => Math.min(79, sh.offsetHeight * 0.14);
   const start = (x, y, target) => {
     if (target.closest('input, textarea, select')) return;
     fromGrip = !!target.closest('.grip-zone');
@@ -1212,7 +1212,7 @@ function bindSwipe() {
   const tint = $('#tint'), sr = $('.stamp.r', card), sl = $('.stamp.l', card);
   const canRight = () => s.state === 'result' && s.result.allOk;
   const canLeft = () => s.state === 'result';
-  const TH = Math.min(90, window.innerWidth * 0.21);
+  const TH = Math.min(68, window.innerWidth * 0.16);
   let x0 = 0, y0 = 0, dx = 0, active = false, decided = null, crossed = false, id = null;
   // Тянуть можно за любую точку экрана, кроме кнопок и полей
   surface.addEventListener('pointerdown', e => {
