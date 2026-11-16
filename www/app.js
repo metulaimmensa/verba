@@ -1036,6 +1036,12 @@ function renderStudy() {
     actions = `<button class="btn primary block" data-act="next">${icon('back', 'sm')}Дальше</button><div class="swipe-hint">или смахни влево</div>`;
   }
 
+  // После «Не помню» ответ и примеры — НАД полями, при обычной проверке — под ними
+  const revealHtml = `<div class="reveal ${s.state === 'result' ? 'open' : ''}" id="reveal"><div><div class="reveal-in">
+          ${s.state === 'result' ? `<div class="answer-line">${esc(w.es)}</div>${verdict}
+          ${w.examples.length ? w.examples.slice(0, 2).map(e => `<div class="ex"><div class="es">${esc(e.es)}</div><div class="ru">${esc(e.ru)}</div></div>`).join('') : ''}` : ''}
+        </div></div></div>`;
+
   return `
   <div class="study">
     <div class="study-top">
@@ -1055,15 +1061,13 @@ function renderStudy() {
           <div class="prompt">${esc(w.ru)}</div>
           <div class="hint">${s.state === 'ask' ? (c && s.tense ? 'Напиши по-испански и проспрягай' : 'Напиши по-испански') : ''}</div>
         </div>
+        ${s.dontKnow ? revealHtml : ''}
         <div class="ans">
           <input class="input ${mark(res && res.main)}" id="ans-main" aria-label="Ответ по-испански" placeholder="по-испански…" value="${res ? esc(s.mainInput) : ''}" autocomplete="off" autocapitalize="off" spellcheck="false" ${dis}>
           ${res && res.main === 'accent' ? `<div class="fix warn">с тильдами: ${esc(w.es)}</div>` : ''}
           ${conjHtml}
         </div>
-        <div class="reveal ${s.state === 'result' ? 'open' : ''}" id="reveal"><div><div class="reveal-in">
-          ${s.state === 'result' ? `<div class="answer-line">${esc(w.es)}</div>${verdict}
-          ${w.examples.length ? w.examples.slice(0, 2).map(e => `<div class="ex"><div class="es">${esc(e.es)}</div><div class="ru">${esc(e.ru)}</div></div>`).join('') : ''}` : ''}
-        </div></div></div>
+        ${s.dontKnow ? '' : revealHtml}
       </div>
       <div class="study-actions">${actions}</div>
     </div>
@@ -1144,10 +1148,10 @@ function decide(outcome, dir) {
   const card = $('#flash');
   if (card && dir && !reduceMotion()) {
     const x = dir > 0 ? window.innerWidth * 1.2 : -window.innerWidth * 1.2;
-    card.style.transition = 'transform 260ms cubic-bezier(.4,0,.6,1), opacity 260ms';
+    card.style.transition = 'transform 100ms cubic-bezier(.4,0,.6,1), opacity 100ms';
     card.style.transform = `translateX(${x}px) rotate(${dir * 14}deg)`;
     card.style.opacity = '0';
-    setTimeout(go, 240);
+    setTimeout(go, 100);
   } else go();
 }
 function levelFlag(a, b) {
