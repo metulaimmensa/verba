@@ -28,3 +28,16 @@ for d in icons.iterdir():
         (resroot / d.name).mkdir(exist_ok=True)
         shutil.copy(f, resroot / d.name / f.name)
 print('icons copied')
+
+# Постоянная подпись: иначе раннер каждый раз генерирует новый debug-ключ, и Android
+# отказывается ставить новую сборку поверх старой («конфликтует с существующим приложением»)
+shutil.copy('scripts/verba-debug.keystore', 'android/app/verba-debug.keystore')
+gradle = pathlib.Path('android/app/build.gradle')
+g = gradle.read_text()
+if 'verba-debug.keystore' not in g:
+    sign = ("android {\n    signingConfigs {\n        debug {\n            storeFile file('verba-debug.keystore')\n"
+            "            storePassword 'android'\n            keyAlias 'androiddebugkey'\n            keyPassword 'android'\n        }\n    }\n")
+    assert 'android {\n' in g, 'не нашёл блок android в build.gradle'
+    g = g.replace('android {\n', sign, 1)
+    gradle.write_text(g)
+print('signing patched')
