@@ -662,7 +662,7 @@ function animateClose(wrap) {
 function bindSheetDrag(wrap) {
   const sh = $('.sheet', wrap);
   let y0 = null, x0 = 0, dy = 0, dragging = false, fromGrip = false, t0 = 0, crossed = false;
-  const limit = () => Math.min(140, sh.offsetHeight * 0.25);
+  const limit = () => Math.min(105, sh.offsetHeight * 0.1875);
   const start = (x, y, target) => {
     if (target.closest('input, textarea, select')) return;
     fromGrip = !!target.closest('.grip-zone');
@@ -873,7 +873,7 @@ function renderSettings() {
     <div class="set-group">
       <div class="set-row"><div class="tx"><b>Новых слов за сессию</b><p>Сколько новых карточек подмешивать</p></div>
         <div class="stepper"><button data-step="-1" aria-label="Меньше">−</button><output id="s-new">${db.settings.newPerSession}</output><button data-step="1" aria-label="Больше">+</button></div></div>
-      ${Object.keys(TENSE_LABELS).map(t => `<div class="set-row"><div class="tx"><b>${TENSE_LABELS[t]}</b><p>${t === 'presente' ? 'Настоящее время' : 'Действие прямо сейчас'}</p></div><label class="switch"><input type="checkbox" data-tense="${t}" ${db.tenses.includes(t) ? 'checked' : ''} aria-label="${TENSE_LABELS[t]}"><i></i></label></div>`).join('')}
+      ${Object.keys(TENSE_LABELS).map(t => `<div class="set-row"><div class="tx"><b>${TENSE_LABELS[t]}</b><p>${t === 'presente' ? 'Настоящее время' : 'Только герундий (estar + gerundio)'}</p></div><label class="switch"><input type="checkbox" data-tense="${t}" ${db.tenses.includes(t) ? 'checked' : ''} aria-label="${TENSE_LABELS[t]}"><i></i></label></div>`).join('')}
     </div>
     <p class="small muted" style="margin:8px 4px 0">Включаешь новое время — все глаголы уходят на последний уровень повторения.</p>
     <div class="section">Интерфейс</div>
@@ -1212,7 +1212,7 @@ function bindSwipe() {
   const tint = $('#tint'), sr = $('.stamp.r', card), sl = $('.stamp.l', card);
   const canRight = () => s.state === 'result' && s.result.allOk;
   const canLeft = () => s.state === 'result';
-  const TH = Math.min(120, window.innerWidth * 0.28);
+  const TH = Math.min(90, window.innerWidth * 0.21);
   let x0 = 0, y0 = 0, dx = 0, active = false, decided = null, crossed = false, id = null;
   // Тянуть можно за любую точку экрана, кроме кнопок и полей
   surface.addEventListener('pointerdown', e => {

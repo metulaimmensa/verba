@@ -1,10 +1,9 @@
 // Verba — офлайн-спряжение испанских глаголов.
-// Сейчас: presente de indicativo + estar + gerundio.
+// Сейчас: presente de indicativo + gerundio (одна форма).
 // Новые времена добавляются отдельными функциями в TENSES.
 
 const PERSONS = ['yo', 'tú', 'él/ella/usted', 'nosotros', 'vosotros', 'ellos/ustedes'];
 const REFL = ['me', 'te', 'se', 'nos', 'os', 'se'];
-const ESTAR = ['estoy', 'estás', 'está', 'estamos', 'estáis', 'están'];
 
 // Полностью неправильные в настоящем
 const IRREGULAR_PRESENT = {
@@ -180,15 +179,12 @@ function conjugate(verb) {
         person: PERSONS[i],
         form: reflexive ? `${REFL[i]} ${f}` : f,
       })),
-      continuo: ESTAR.map((e, i) => ({
-        person: PERSONS[i],
-        form: reflexive ? `${REFL[i]} ${e} ${g}` : `${e} ${g}`,
-        alt: reflexive ? `${e} ${attachToGerund(g, REFL[i])}` : null,
-      })),
+      // Герундий не меняется по лицам — одна форма, estar спрягать не нужно
+      continuo: [{ person: 'gerundio', form: reflexive ? attachToGerund(g, 'se') : g, alt: null }],
     },
   };
 }
 
-const TENSE_LABELS = { presente: 'Presente', continuo: 'Estar + gerundio' };
+const TENSE_LABELS = { presente: 'Presente', continuo: 'Gerundio' };
 
 if (typeof module !== 'undefined') module.exports = { conjugate, gerund, TENSE_LABELS, PERSONS };

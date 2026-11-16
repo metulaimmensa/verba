@@ -17,5 +17,8 @@ for (const [v, exp] of Object.entries(cases)) {
 }
 const ger = { comer: 'comiendo', leer: 'leyendo', dormir: 'durmiendo', pedir: 'pidiendo', sentir: 'sintiendo', 'bañarse': 'bañándose' };
 for (const [v, g] of Object.entries(ger)) assert.strictEqual(conjugate(v).gerund, g, v);
-assert.strictEqual(conjugate('bañarse').tenses.continuo[0].form, 'me estoy bañando');
+assert.strictEqual(conjugate('bañarse').tenses.continuo.length, 1);
+assert.strictEqual(conjugate('bañarse').tenses.continuo[0].form, 'bañándose');
+assert.strictEqual(conjugate('hablar').tenses.continuo.length, 1);
+assert.strictEqual(conjugate('hablar').tenses.continuo[0].form, 'hablando');
 console.log('Спряжение: все тесты прошли');
